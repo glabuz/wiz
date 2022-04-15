@@ -9,7 +9,7 @@ const bn = require('bignumber.js');
 const day = 60*60*24;
 
 let addresses = [
-    //addresses you want to check
+    0x891615aF0E913e3F08E7de3853A8180BD8fE27b3
 ]
 //number of list resets to check, beastid, days from now you want to start checking
 start(3, 3, 0);
@@ -45,7 +45,7 @@ async function spawnList(timestamp, beast, check) {
     for (let i = 0; i < 42; i++) {
         let hash = web3.utils.soliditySha3(parseInt(`${date}`), beast, i, "Forgotten Runes")
         let num = new bn(hash);
-    
+
         ids.push(((num.modulo(10000)).toString()));
     }
     console.log(ids)
@@ -71,4 +71,4 @@ async function start(days, beast, check) {
         timestamp += day;
     }
 
-}   
+}
