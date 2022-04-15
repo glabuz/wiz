@@ -1,0 +1,74 @@
+const Web3 = require("web3");
+const web3 = new Web3(
+  new Web3.providers.HttpProvider(
+    "YOUR_NODE"
+  )
+);
+const bn = require('bignumber.js');
+
+const day = 60*60*24;
+
+let addresses = [
+    //addresses you want to check
+]
+//number of list resets to check, beastid, days from now you want to start checking
+start(3, 3, 0);
+
+async function getHeldWizards(block) {
+    console.log('Checking Held Wizards/Souls');
+    const methodHash = web3.utils.sha3('tokensOfOwner(address)').substr(0, 10);
+    let ids = [];
+    for (let address of addresses) {
+        const data = web3.eth.abi.encodeParameter('address', address);
+        const bytes = `${methodHash}${data.substr(2)}`;
+        let callResult = await web3.eth.call({
+            to: '0x521f9C7505005CFA19A8E5786a9c3c9c9F5e6f42',
+            data: bytes.toString()
+          }, block);
+        let decodedResult = web3.eth.abi.decodeParameter('uint256[]', callResult);
+        ids = ids.concat(decodedResult);
+
+        callResult = await web3.eth.call({
+            to: '0x251b5F14A825C537ff788604eA1b58e49b70726f',
+            data: bytes.toString()
+          }, block);
+        decodedResult = web3.eth.abi.decodeParameter('uint256[]', callResult);
+        ids = ids.concat(decodedResult);
+    }
+    return ids;
+}
+
+async function spawnList(timestamp, beast, check) {
+    console.log(`Get Spawn list for timestamp: ${timestamp}`);
+    let date = (timestamp + (day*check)) / (day);
+    let ids = [];
+    for (let i = 0; i < 42; i++) {
+        let hash = web3.utils.soliditySha3(parseInt(`${date}`), beast, i, "Forgotten Runes")
+        let num = new bn(hash);
+    
+        ids.push(((num.modulo(10000)).toString()));
+    }
+    console.log(ids)
+    return ids;
+}
+
+async function start(days, beast, check) {
+    let block = await web3.eth.getBlockNumber();
+    let timestamp = (await web3.eth.getBlock(block)).timestamp; //current timestamp
+    for (let x = 0; x < days; x++) {
+        let list = await spawnList(timestamp, beast, check);
+        let heldWizs = await getHeldWizards(block);
+
+        let foundHeld = [];
+        for (let i = 0; i < list.length; i++) {
+            let idx = heldWizs.indexOf(list[i]);
+            if (idx >= 0) {
+                foundHeld.push(heldWizs[idx]);
+            }
+        }
+        console.log(`Timestamp: ${timestamp}`)
+        console.log('Held IDS', foundHeld)
+        timestamp += day;
+    }
+
+}   
